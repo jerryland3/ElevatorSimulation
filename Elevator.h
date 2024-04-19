@@ -8,7 +8,7 @@
 
 class Elevator {
 public:
-	Elevator(int elevatorNum, int speed) : elevatorID(elevatorNum), ELEVATOR_SPEED(speed), direction(ElevatorDirection::UP), state(ElevatorState::STOPPED), currentFloor{ 1 }, nextActionTime{ 0 } {}
+	Elevator(int elevatorNum, int speed, int elevatorStoppingTime) : elevatorID(elevatorNum), ELEVATOR_SPEED(speed), ELEVATOR_STOP_TIME{ elevatorStoppingTime }, direction(ElevatorDirection::UP), state(ElevatorState::STOPPED) {}
 
 	bool hasPassengers() const {
 		return !passengers.empty();
@@ -66,7 +66,7 @@ public:
 				if (shouldStopAtFloor(floors.at(currentFloor - 1)))
 				{
 					state = ElevatorState::STOPPING;
-					nextActionTime = currentTime + ELEVATOR_STOP_TIME - 1;
+					nextActionTime = currentTime + ELEVATOR_STOP_TIME - 1; // -1 second to account for stopped state which takes 1 second to execute
 				}
 				else
 				{
@@ -92,7 +92,7 @@ public:
 				if (shouldStopAtFloor(floors.at(currentFloor - 1)))
 				{
 					state = ElevatorState::STOPPING;
-					nextActionTime = currentTime + ELEVATOR_STOP_TIME - 1;
+					nextActionTime = currentTime + ELEVATOR_STOP_TIME - 1; // -1 second to account for stopped state which takes 1 second to execute
 				}
 				else
 				{
@@ -104,13 +104,13 @@ public:
 	}
 private:
 	int elevatorID;
-	int currentFloor;
-	ElevatorDirection direction;
-	int nextActionTime;
+	int currentFloor = 1;
+	int nextActionTime = 0;
 	const int ELEVATOR_SPEED;
-	const int ELEVATOR_STOP_TIME = 2;
+	const int ELEVATOR_STOP_TIME;
 	const int CAPACITY = 8;
 	ElevatorState state;
+	ElevatorDirection direction;
 	std::deque<Passenger> passengers;
 
 	bool shouldStopAtFloor(Floor& floor)
@@ -144,8 +144,10 @@ private:
 
 	void pickUpPassengers(Floor& floor, int currentTime)
 	{
+		// pick up passengers that are going in the same direction, up to the capacity of the elevator
 		for (auto it = floor.getWaitingPassengers().begin(); it != floor.getWaitingPassengers().end();)
 		{
+			// if the passenger is going in the same direction as the elevator, pick them up
 			if (it->getDirection() == direction)
 			{
 				it->calculateWaitTime(currentTime);
@@ -157,6 +159,7 @@ private:
 				++it;
 			}
 
+			// if the elevator is at capacity, stop picking up passengers
 			if (passengers.size() == CAPACITY)
 			{
 				break;

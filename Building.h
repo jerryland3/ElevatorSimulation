@@ -11,7 +11,7 @@
 
 class Building {
 public:
-	Building(int numOfFloors, int numOfElevators) : NUM_OF_FLOORS{ numOfFloors }, NUM_OF_ELEVATORS{ numOfElevators } {
+	Building(int numOfFloors, int numOfElevators, int elevatorSpeed, int elevatorStoppingTime) : NUM_OF_FLOORS{ numOfFloors }, NUM_OF_ELEVATORS{ numOfElevators }, ELEVATOR_SPEED{ elevatorSpeed }, ELEVATOR_STOPPING_TIME{ elevatorStoppingTime } {
 		// initalize containers
 		initalizeFloors();
 		initalizeElevators();
@@ -21,36 +21,37 @@ public:
 		totalPassenger = passengers.size();
 	}
 
-	void run() {
+	void simulate() {
 		// keep updating until all passengers arrived
 		while (!allPassengerArrived()) {
 			// update passengers
 			while (!passengers.empty() && passengers.front().getStartTime() == currentTime) {
-				floors[passengers.front().getStartFloor() - 1].addWaitingPassenger(passengers.front());
+				Floor passengerStartfloor = floors[passengers.front().getStartFloor() - 1];
+				passengerStartfloor.addWaitingPassenger(passengers.front());
 				passengers.pop();
 			}
 
 			// update elevator1
-			elevators[0]->update(currentTime, NUM_OF_FLOORS, floors);
+			elevators[0].update(currentTime, NUM_OF_FLOORS, floors);
 
 			// wait for 100 seconds, then update elevator2
 			if (currentTime >= 100) {
-				elevators[1]->update(currentTime, NUM_OF_FLOORS, floors);
+				elevators[1].update(currentTime, NUM_OF_FLOORS, floors);
 			}
 
 			// wait for 1000 seconds then update elevator3
 			if (currentTime >= 500) {
-				elevators[2]->update(currentTime, NUM_OF_FLOORS, floors);
+				elevators[2].update(currentTime, NUM_OF_FLOORS, floors);
 			}
 
 			// wait for 1100 seconds then update elevator4
 			if (currentTime >= 700) {
-				elevators[3]->update(currentTime, NUM_OF_FLOORS, floors);
+				elevators[3].update(currentTime, NUM_OF_FLOORS, floors);
 			}
 
 			// update time
 			++currentTime;
-			std::cout << "Current time: " << currentTime << std::endl;
+			//std::cout << "Current time: " << currentTime << std::endl;
 		}
 
 		// calculate statistics
@@ -74,9 +75,11 @@ public:
 private:
 	const int NUM_OF_FLOORS;
 	const int NUM_OF_ELEVATORS;
+	const int ELEVATOR_SPEED;
+	const int ELEVATOR_STOPPING_TIME;
 	int currentTime = 0;
 	std::vector<Floor> floors;
-	std::vector<std::shared_ptr<Elevator>> elevators;
+	std::vector<Elevator> elevators;
 	std::queue<Passenger> passengers;
 	Statistic travelTimeStat;
 	Statistic waitTimeStat;
@@ -93,7 +96,7 @@ private:
 
 	void initalizeElevators() {
 		for (int i = 0; i < NUM_OF_ELEVATORS; ++i) {
-			elevators.push_back(std::make_shared<Elevator>(i, 10));
+			elevators.push_back(Elevator(i, ELEVATOR_SPEED, ELEVATOR_STOPPING_TIME));
 		}
 	}
 
@@ -132,9 +135,9 @@ private:
 				return false;
 			}
 		}
-		// check if all elevators for passengers
+		// check all elevators for passengers
 		for (int i = 0; i < NUM_OF_ELEVATORS; ++i) {
-			if (elevators[i]->hasPassengers()) {
+			if (elevators[i].hasPassengers()) {
 				return false;
 			}
 		}
